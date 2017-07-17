@@ -183,11 +183,8 @@ function! s:save_state(d) abort
   " Remember alternate buffer.
   let a:d.altbuf = s:buf_isvalid(bufnr('#')) || !exists('w:dirvish')
         \ ? 0+bufnr('#') : w:dirvish.altbuf
-  if a:d.altbuf == -1
-    let a:d.altbuf = bufnr('')
-  endif
-  if exists('b:dirvish') && (a:d.altbuf == a:d.prevbuf || !s:buf_isvalid(a:d.altbuf))
-    let a:d.altbuf = b:dirvish.altbuf
+  if a:d.altbuf == a:d.prevbuf || !s:buf_isvalid(a:d.altbuf)
+    let a:d.altbuf = exists('b:dirvish') ? b:dirvish.altbuf : a:d.prevbuf
   endif
 
   " Save window-local settings.
