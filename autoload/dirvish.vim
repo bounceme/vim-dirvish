@@ -183,6 +183,9 @@ function! s:save_state(d) abort
   " Remember alternate buffer.
   let a:d.altbuf = s:buf_isvalid(bufnr('#')) || !exists('w:dirvish')
         \ ? 0+bufnr('#') : w:dirvish.altbuf
+  if a:d.altbuf == -1
+    let a:d.altbuf = bufnr('')
+  endif
   if exists('b:dirvish') && (a:d.altbuf == a:d.prevbuf || !s:buf_isvalid(a:d.altbuf))
     let a:d.altbuf = b:dirvish.altbuf
   endif
@@ -268,7 +271,7 @@ function! s:open_selected(split_cmd, bg, line1, line2) abort
 endfunction
 
 function! s:is_valid_altbuf(bnr) abort
-  return a:bnr != bufnr('%') && bufexists(a:bnr) && empty(getbufvar(a:bnr, 'dirvish'))
+  return !&hidden || a:bnr != bufnr('%') && bufexists(a:bnr) && empty(getbufvar(a:bnr, 'dirvish'))
 endfunction
 
 function! s:set_altbuf(bnr) abort
@@ -288,10 +291,8 @@ function! s:try_visit(bnr) abort
   if s:is_valid_altbuf(a:bnr)
     " If _previous_ buffer is _not_ loaded (because of 'nohidden'), we must
     " allow autocmds (else no syntax highlighting; #13).
-    execute 'silent keepjumps noau' s:noswapfile 'buffer' a:bnr
-    if !&hidden && !did_filetype()
-      doautocmd <nomodeline> filetype
-    endif
+    let noau = bufloaded(a:bnr) ? 'noau' : ''
+    execute 'silent keepjumps' noau s:noswapfile 'buffer' a:bnr
     return 1
   endif
   return 0
@@ -393,7 +394,10 @@ function! s:do_open(d, reload) abort
   endif
 
 
-  if -1 == bnr
+  if !&hidden && bnr == -1
+    let bnr = bufnr('^' . d._dir . '$',1)
+  endif
+  if -1 == bnr 
     execute 'silent noau ' s:noswapfile 'edit' fnameescape(d._dir)
   else
     execute 'silent noau ' s:noswapfile 'buffer' bnr
@@ -448,7 +452,7 @@ function! s:should_reload() abort
 endfunction
 
 function! s:buf_isvalid(bnr) abort
-  return bufexists(a:bnr) && !isdirectory(s:sl(bufname(a:bnr)))
+  return !&hidden && a:bnr != -1 || bufexists(a:bnr) && !isdirectory(s:sl(bufname(a:bnr)))
 endfunction
 
 function! dirvish#open(...) range abort
@@ -489,8 +493,10 @@ function! dirvish#open(...) range abort
   if reloading
     let d.lastpath = ''         " Do not place cursor when reloading.
   elseif has_key(d,'remote')
-    if d._dir ==# substitute(from_path,'\/[^/]*$','','')
+    if d._dir ==# substitute(from_path,'\/[^/]*','','')
       let d.lastpath = from_path  " Save lastpath when navigating _up_.
+    elseif from_path is ''
+      let d.prevbuf = bufnr('')
     endif
   elseif d._dir ==# s:parent_dir(from_path)
     let d.lastpath = from_path  " Save lastpath when navigating _up_.
