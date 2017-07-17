@@ -271,7 +271,7 @@ function! s:open_selected(split_cmd, bg, line1, line2) abort
 endfunction
 
 function! s:is_valid_altbuf(bnr) abort
-  return !&hidden || a:bnr != bufnr('%') && bufexists(a:bnr) && empty(getbufvar(a:bnr, 'dirvish'))
+  return a:bnr != bufnr('%') && bufexists(a:bnr) && empty(getbufvar(a:bnr, 'dirvish'))
 endfunction
 
 function! s:set_altbuf(bnr) abort
