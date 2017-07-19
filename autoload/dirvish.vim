@@ -459,7 +459,7 @@ function! s:should_reload() abort
 endfunction
 
 function! s:buf_isvalid(bnr) abort
-  return buflisted(a:bnr) && bufexists(a:bnr) && !isdirectory(s:sl(bufname(a:bnr)))
+  return buflisted(a:bnr) && !isdirectory(s:sl(bufname(a:bnr)))
 endfunction
 
 function! dirvish#open(...) range abort
@@ -498,10 +498,9 @@ function! dirvish#open(...) range abort
 
   if reloading
     let d.lastpath = ''         " Do not place cursor when reloading.
-  elseif has_key(d, 'remote') && empty(getbufvar(bufnr(''), 'dirvish'))
-    if d._dir ==# substitute(from_path, '[^/]*\/\=$', '', '')
-      let d.lastpath = from_path  " Save lastpath when navigating _up_.
-    endif
+  elseif has_key(d, 'remote')
+        \ && d._dir ==# substitute(from_path, '[^/]*\/\=$', '', '')
+    let d.lastpath = from_path  " Save lastpath when navigating _up_.
   elseif d._dir ==# s:parent_dir(from_path)
     let d.lastpath = from_path  " Save lastpath when navigating _up_.
   endif
